@@ -49,8 +49,8 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APISer
 	userCtrl := controllers.NewUserController(log, registry)
 	forumCtrl := controllers.NewForumController(log, registry)
 	threadCtrl := controllers.NewThreadController(log, registry)
-	//postCtrl := controllers.NewPostController(log, registry)
-	//serviceCtrl := controllers.NewServiceController(log, registry)
+	postCtrl := controllers.NewPostController(log, registry)
+	serviceCtrl := controllers.NewServiceController(log, repository)
 
 	api := svc.router.Group("/api")
 
@@ -60,16 +60,16 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APISer
 	api.GET("/forum/:slug/users", forumCtrl.GetForumUsers)
 	api.GET("/forum/:slug/threads", forumCtrl.GetForumThreads)
 
-	//api.GET("/post/:id/details", postCtrl.GetPostDetails)
-	//api.POST("/post/:id/details", postCtrl.UpdatePost)
-	//
-	//api.POST("/service/clear", serviceCtrl.Delete)
-	//api.GET("/service/status", serviceCtrl.Status)
-	//
-	//api.POST("/thread/:slug_or_id/create", postCtrl.CreatePosts)
+	api.GET("/post/:id/details", postCtrl.GetPostDetails)
+	api.POST("/post/:id/details", postCtrl.UpdatePost)
+
+	api.POST("/service/clear", serviceCtrl.Clear)
+	api.GET("/service/status", serviceCtrl.Status)
+
+	api.POST("/thread/:slug_or_id/create", postCtrl.CreatePosts)
 	api.GET("/thread/:slug_or_id/details", threadCtrl.GetThread)
 	api.POST("/thread/:slug_or_id/details", threadCtrl.EditThread)
-	//api.GET("/thread/:slug_or_id/posts", postCtrl.GetPosts)
+	api.GET("/thread/:slug_or_id/posts", postCtrl.GetPosts)
 	api.POST("/thread/:slug_or_id/vote", threadCtrl.CountVote)
 
 	api.POST("/user/:nickname/create", userCtrl.CreateUser)
