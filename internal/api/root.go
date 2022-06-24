@@ -37,9 +37,6 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APISer
 		debug:  debug,
 	}
 
-	svc.router.Validator = NewValidator()
-	svc.router.Binder = NewBinder()
-
 	repository, err := db.NewRepository(dbConn)
 	if err != nil {
 		log.Fatal(err)
@@ -47,12 +44,34 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APISer
 
 	registry := service.NewRegistry(log, repository)
 	userCtrl := controllers.NewUserController(log, registry)
+	forumCtrl := controllers.NewForumController(log, registry)
+	threadCtrl := controllers.NewThreadController(log, registry)
+	postCtrl := controllers.NewPostController(log, registry)
+	serviceCtrl := controllers.NewServiceController(log, registry)
 
 	api := svc.router.Group("/api")
 
-	authAPI := api.Group("/auth")
+	api.POST("/forum/create", forumCtrl.CreateForum)
+	api.GET("/forum/:slug/details", forumCtrl.GetForum)
+	api.POST("/forum/:slug/create", forumCtrl.CreateForumThread)
+	api.GET("/forum/:slug/users", forumCtrl.GetForumUsers)
+	api.GET("/forum/:slug/threads", forumCtrl.GetForumThreads)
 
-	authAPI.GET("/get", userCtrl.GetUserData)
+	api.GET("/post/:id/details", postCtrl.GetPostDetails)
+	api.POST("/post/:id/details", postCtrl.UpdatePost)
+
+	api.POST("/service/clear", serviceCtrl.Delete)
+	api.GET("/service/status", serviceCtrl.Status)
+
+	api.POST("/thread/:slug_or_id/create", threadCtrl.CreatePosts)
+	api.GET("/thread/:slug_or_id/details", threadCtrl.GetForumThreadDetails)
+	api.POST("/thread/:slug_or_id/details", threadCtrl.EditForumThread)
+	api.GET("/thread/:slug_or_id/posts", threadCtrl.GetPosts)
+	api.POST("/thread/:slug_or_id/vote", threadCtrl.CountVote)
+
+	api.POST("/user/:nickname/create", userCtrl.CreateUser)
+	api.GET("/user/:nickname/profile", userCtrl.GetUserProfile)
+	api.POST("/user/:nickname/profile", userCtrl.EditUserProfile)
 
 	return svc, nil
 }
