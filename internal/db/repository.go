@@ -5,12 +5,14 @@ import (
 )
 
 type Repository struct {
-	UserRepository UserRepository
+	UserRepository  UserRepository
+	ForumRepository ForumRepository
 }
 
 func NewRepository(dbConn *pgxpool.Pool) (*Repository, error) {
 	repository := &Repository{}
 
 	repository.UserRepository = NewUserRepository(dbConn)
+	repository.ForumRepository = NewForumRepository(dbConn)
 	return repository, nil
 }
