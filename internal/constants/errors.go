@@ -23,7 +23,6 @@ var (
 	// Not Found
 	ErrDBNotFound = &CodedError{errors.New("Not found in db"), http.StatusNotFound}
 
-	ErrGenerateUUID = &CodedError{errors.New("failed to generate UUID"), http.StatusInternalServerError}
 	// User
 	ErrUserAlreadyExists = &CodedError{errors.New("User with given nickname already exists"), http.StatusConflict}
 

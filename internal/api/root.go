@@ -48,9 +48,6 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APISer
 	registry := service.NewRegistry(log, repository)
 	userCtrl := controllers.NewUserController(log, registry)
 
-	svc.router.HTTPErrorHandler = svc.httpErrorHandler
-	svc.router.Use(svc.XRequestIDMiddleware(), svc.LoggingMiddleware())
-
 	api := svc.router.Group("/api")
 
 	authAPI := api.Group("/auth")

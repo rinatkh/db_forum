@@ -1,0 +1,71 @@
+CREATE
+EXTENSION IF NOT EXISTS CITEXT;
+DROP TABLE IF EXISTS Users CASCADE;
+DROP TABLE IF EXISTS Forums CASCADE;
+DROP TABLE IF EXISTS Threads CASCADE;
+DROP TABLE IF EXISTS Posts CASCADE;
+DROP TABLE IF EXISTS ForumUsers CASCADE;
+DROP TABLE IF EXISTS Votes CASCADE;
+
+
+CREATE
+UNLOGGED TABLE IF NOT EXISTS Users (
+    id SERIAL,
+    nickname CITEXT COLLATE "C" NOT NULL PRIMARY KEY,
+    fullname TEXT NOT NULL,
+    about TEXT,
+    email CITEXT NOT NULL UNIQUE
+);
+
+CREATE
+UNLOGGED TABLE IF NOT EXISTS Forums (
+    id  SERIAL,
+    slug CITEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    "user" CITEXT COLLATE "C" NOT NULL REFERENCES Users(nickname),
+    posts INT NOT NULL DEFAULT 0,
+    threads INT NOT NULL DEFAULT 0
+);
+
+CREATE
+UNLOGGED TABLE Threads (
+    id SERIAL NOT NULL PRIMARY KEY,
+    slug CITEXT UNIQUE,
+    title TEXT NOT NULL,
+    author CITEXT COLLATE "C" NOT NULL REFERENCES Users(nickname),
+    forum CITEXT NOT NULL REFERENCES Forums(slug) ,
+    message TEXT,
+    votes INT DEFAULT 0,
+    created TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE
+UNLOGGED TABLE IF NOT EXISTS Posts (
+    id SERIAL PRIMARY KEY,
+    parent INT DEFAULT 0,
+    path INT[] DEFAULT ARRAY []::INT[]
+    author CITEXT  COLLATE "C" NOT NULL REFERENCES Users(nickname),
+    message TEXT NOT NULL,
+    isEdited boolean DEFAULT FALSE,
+    forum CITEXT NOT NULL REFERENCES Forums(slug),
+    thread INT  REFERENCES Threads(id),
+    created TIMESTAMP WITH TIME ZONE DEFAULT now(),
+);
+
+CREATE
+UNLOGGED TABLE IF NOT EXISTS ForumUsers (
+    nickname CITEXT COLLATE "C" NOT NULL REFERENCES Users(nickname),
+    fullname TEXT NOT NULL,
+    about TEXT,
+    email CITEXT NOT NULL,
+    forum CITEXT NOT NULL REFERENCES Forums(slug),
+    PRIMARY KEY (nickname, forum)
+);
+
+CREATE
+UNLOGGED TABLE if not exists Votes (
+    nickname CITEXT COLLATE "C" NOT NULL REFERENCES Users (nickname),
+    thread SERIAL NOT NULL REFERENCES Threads (id),
+    voice INT NOT NULL,
+    PRIMARY KEY (nickname, thread)
+);
