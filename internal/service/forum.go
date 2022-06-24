@@ -25,7 +25,7 @@ type forumServiceImpl struct {
 }
 
 func (svc *forumServiceImpl) CreateForum(ctx context.Context, request *dto.CreateForumRequest) (*dto.Response, error) {
-	if forum, err := svc.db.ForumRepository.GetForumBySlug(ctx, request.Slug); err != nil {
+	if forum, err := svc.db.ForumRepository.GetForum(ctx, request.Slug); err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
@@ -45,7 +45,7 @@ func (svc *forumServiceImpl) CreateForum(ctx context.Context, request *dto.Creat
 		return nil, err
 	}
 
-	forum, err := svc.db.ForumRepository.GetForumBySlug(ctx, request.Slug)
+	forum, err := svc.db.ForumRepository.GetForum(ctx, request.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (svc *forumServiceImpl) CreateForum(ctx context.Context, request *dto.Creat
 }
 
 func (svc *forumServiceImpl) GetForum(ctx context.Context, request *dto.GetForumBySlugRequest) (*dto.Response, error) {
-	forum, err := svc.db.ForumRepository.GetForumBySlug(ctx, request.Slug)
+	forum, err := svc.db.ForumRepository.GetForum(ctx, request.Slug)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find forum with slug: %s", request.Slug)}, Code: http.StatusNotFound}, nil
@@ -64,7 +64,7 @@ func (svc *forumServiceImpl) GetForum(ctx context.Context, request *dto.GetForum
 }
 
 func (svc *forumServiceImpl) GetForumThreads(ctx context.Context, request *dto.GetForumThreadsRequest) (*dto.Response, error) {
-	if forum, err := svc.db.ForumRepository.GetForumBySlug(ctx, request.Slug); err != nil {
+	if forum, err := svc.db.ForumRepository.GetForum(ctx, request.Slug); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find forum with slug: %s", request.Slug)}, Code: http.StatusNotFound}, nil
 		}
@@ -81,7 +81,7 @@ func (svc *forumServiceImpl) GetForumThreads(ctx context.Context, request *dto.G
 }
 
 func (svc *forumServiceImpl) GetForumUsers(ctx context.Context, request *dto.GetForumUsersRequest) (*dto.Response, error) {
-	if forum, err := svc.db.ForumRepository.GetForumBySlug(ctx, request.Slug); err != nil {
+	if forum, err := svc.db.ForumRepository.GetForum(ctx, request.Slug); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find forum with slug: %s", request.Slug)}, Code: http.StatusNotFound}, nil
 		}

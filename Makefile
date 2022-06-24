@@ -1,7 +1,7 @@
 all: docker-build docker-run
 
 docker-build:
-	DOCKER_BUILDKIT=1 docker build -t park .
+	DOCKER_BUILDKIT=1 docker build -t db_forum .
 
 docker-run:
 	docker rm -f db_forum

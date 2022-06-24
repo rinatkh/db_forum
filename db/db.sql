@@ -1,11 +1,4 @@
 CREATE EXTENSION IF NOT EXISTS CITEXT;
-DROP TABLE IF EXISTS Users CASCADE;
-DROP TABLE IF EXISTS Forums CASCADE;
-DROP TABLE IF EXISTS Threads CASCADE;
-DROP TABLE IF EXISTS Posts CASCADE;
-DROP TABLE IF EXISTS ForumUsers CASCADE;
-DROP TABLE IF EXISTS Votes CASCADE;
-
 
 CREATE UNLOGGED TABLE IF NOT EXISTS Users (
     id SERIAL,
@@ -38,13 +31,13 @@ CREATE UNLOGGED TABLE Threads (
 CREATE UNLOGGED TABLE IF NOT EXISTS Posts (
     id SERIAL PRIMARY KEY,
     parent INT DEFAULT 0,
-    path INT[] DEFAULT ARRAY []::INT[]
+    path INT[] DEFAULT ARRAY []::INT[],
     author CITEXT  COLLATE "C" NOT NULL REFERENCES Users(nickname),
     message TEXT NOT NULL,
     isEdited boolean DEFAULT FALSE,
     forum CITEXT NOT NULL REFERENCES Forums(slug),
     thread INT  REFERENCES Threads(id),
-    created TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    created TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE UNLOGGED TABLE IF NOT EXISTS ForumUsers (
@@ -63,41 +56,18 @@ CREATE UNLOGGED TABLE if not exists Votes (
     PRIMARY KEY (nickname, thread)
 );
 
-DROP INDEX user_nickname;
 CREATE INDEX IF NOT EXISTS user_nickname ON Users(nickname);
-
-DROP INDEX user_email;
 CREATE INDEX IF NOT EXISTS user_email ON Users USING hash(email);
-
-DROP INDEX forum_slug;
 CREATE INDEX IF NOT EXISTS forum_slug ON Forums using hash(slug);
-
-DROP INDEX thread_slug;
 CREATE INDEX IF NOT EXISTS thread_slug ON Threads USING hash(slug);
-
-DROP INDEX thread_forum_slug;
 CREATE INDEX IF NOT EXISTS thread_forum_slug ON Threads(forum);
-
-DROP INDEX thread_forum_created_idx;
 CREATE INDEX IF NOT EXISTS thread_forum_created_idx ON Threads(slug, created);
-
-DROP INDEX post_thread;
 CREATE INDEX IF NOT EXISTS post_thread ON Posts(thread);
-
-DROP INDEX post_thread_created;
-CREATE INDEX IF NOT EXISTS post_thread_created ON Posts(thread_id,created);
-
-DROP INDEX post_path;
+CREATE INDEX IF NOT EXISTS post_thread_created ON Posts(thread,created);
 CREATE INDEX IF NOT EXISTS post_path ON Posts((path[1]), path);
-
-DROP INDEX post_thread_path;
 CREATE INDEX IF NOT EXISTS post_thread_path ON Posts(thread, path);
-
-DROP INDEX forum_users_forum_nickname;
 CREATE INDEX IF NOT EXISTS forum_users_forum_nickname ON ForumUsers (forum, nickname);
-
-DROP INDEX votes_nickname_thread;
-CREATE UNIQUE INDEX IF NOT EXISTS votes_nickname_thread ON Votes (nickname, thread);
+CREATE INDEX IF NOT EXISTS votes_nickname_thread ON Votes (nickname, thread);
 
 CREATE OR REPLACE FUNCTION insert_vote() RETURNS TRIGGER AS $$
     BEGIN
@@ -129,45 +99,32 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION update_post_path() RETURNS TRIGGER AS $$
     BEGIN
-        new.path = (SELECT path FROM Posts WHERE id = new.parent) || new.id;
-        RETURN new;
+        NEW.path = (SELECT path FROM Posts WHERE id = NEW.parent) || NEW.id;
+        RETURN NEW;
     END;
 $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION update_users_from_forum() RETURNS TRIGGER AS $$
 DECLARE
-nickname citext;
+    nickname CITEXT;
     fullname TEXT;
     about    TEXT;
     email    CITEXT;
     BEGIN
-        SELECT u.nickname, u.fullname, u.about, u.email FROM users u WHERE u.nickname = NEW.author INTO nickname, fullname, about, email;
+        SELECT u.nickname, u.fullname, u.about, u.email FROM Users u WHERE u.nickname = NEW.author INTO nickname, fullname, about, email;
         INSERT INTO ForumUsers (nickname, fullname, about, email, forum)
         VALUES (nickname, fullname, about, email, NEW.forum) ON CONFLICT do nothing;
         RETURN NEW;
     END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS vote_insert ON Votes;
 CREATE TRIGGER insert_votes AFTER INSERT ON Votes FOR EACH ROW EXECUTE PROCEDURE insert_vote();
-
-DROP TRIGGER IF EXISTS vote_insert ON Votes;
 CREATE TRIGGER update_votes AFTER UPDATE ON Votes FOR EACH ROW EXECUTE PROCEDURE update_vote();
-
-DROP TRIGGER IF EXISTS count_threads ON Threads;
 CREATE TRIGGER count_threads AFTER INSERT ON Threads FOR EACH ROW EXECUTE PROCEDURE count_forum_threads();
-
-DROP TRIGGER IF EXISTS count_posts ON Posts;
 CREATE TRIGGER count_posts AFTER INSERT ON Posts FOR EACH ROW EXECUTE PROCEDURE count_forum_posts();
-
-DROP TRIGGER IF EXISTS update_post_path ON Posts;
 CREATE TRIGGER update_post_path BEFORE INSERT ON Posts FOR EACH ROW EXECUTE PROCEDURE update_post_path();
-
-DROP TRIGGER IF EXISTS update_users_on_post ON Posts;
 CREATE TRIGGER update_users_on_post AFTER INSERT ON Posts FOR EACH ROW EXECUTE PROCEDURE update_users_from_forum();
-
-DROP TRIGGER IF EXISTS update_users_on_thread ON Threads;
 CREATE TRIGGER update_users_on_thread AFTER INSERT ON Threads FOR EACH ROW EXECUTE PROCEDURE update_users_from_forum();
 
 VACUUM;

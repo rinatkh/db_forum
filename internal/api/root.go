@@ -8,18 +8,16 @@ import (
 	"github.com/rinatkh/db_forum/internal/db"
 	"github.com/rinatkh/db_forum/internal/service"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type APIService struct {
 	log    *logrus.Entry
 	router *echo.Echo
-	debug  bool
 }
 
 func (svc *APIService) Serve() {
 	svc.log.Info("Starting HTTP server")
-	listenAddr := viper.GetString("service.bind.address") + ":" + viper.GetString("service.bind.port")
+	listenAddr := "0.0.0.0:5000"
 	svc.log.Fatal(svc.router.Start(listenAddr))
 }
 
@@ -30,11 +28,10 @@ func (svc *APIService) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool, debug bool) (*APIService, error) {
+func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool) (*APIService, error) {
 	svc := &APIService{
 		log:    log,
 		router: echo.New(),
-		debug:  debug,
 	}
 
 	repository, err := db.NewRepository(dbConn)

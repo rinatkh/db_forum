@@ -3,7 +3,7 @@ FROM golang:latest AS build
 WORKDIR /app
 
 COPY . ./
-RUN go build -ldflags "-w -s" ./cmd/main.go
+RUN go build cmd/main.go
 
 FROM ubuntu:20.04
 
@@ -16,7 +16,7 @@ USER postgres
 
 RUN /etc/init.d/postgresql start && \
   psql --command "CREATE USER root WITH SUPERUSER PASSWORD 'password';" && \
-  createdb -O root technopark-dbms && \
+  createdb -O root docker && \
   /etc/init.d/postgresql stop
 
 EXPOSE 5432
@@ -26,13 +26,9 @@ USER root
 
 WORKDIR /cmd
 
-RUN mkdir /cmd/configs
-VOLUME ["/cmd/configs"]
-
 COPY ./db/db.sql ./db.sql
-COPY ./resources/config/config.yaml ./configs
 COPY --from=build /app/main .
 
 EXPOSE 5000
 ENV PGPASSWORD password
-CMD service postgresql start && psql -h localhost -d technopark-dbms -U root -p 5432 -a -q -f ./db.sql && ./main
+CMD service postgresql start && psql -h localhost -d docker -U root -p 5432 -a -q -f ./db.sql && ./main
