@@ -11,7 +11,7 @@ import (
 
 type ForumRepository interface {
 	CreateForum(ctx context.Context, forum *core.Forum) error
-	GetForumBySlug(ctx context.Context, slug string) (*core.Forum, error)
+	GetForum(ctx context.Context, slug string) (*core.Forum, error)
 	GetForumUsers(ctx context.Context, slug string, limit int64, since string, desc bool) ([]*core.User, error)
 	GetForumThreads(ctx context.Context, slug string, limit int64, since string, desc bool) ([]*core.Thread, error)
 }
@@ -25,7 +25,7 @@ func (repo *forumRepositoryImpl) CreateForum(ctx context.Context, forum *core.Fo
 	return err
 }
 
-func (repo *forumRepositoryImpl) GetForumBySlug(ctx context.Context, slug string) (*core.Forum, error) {
+func (repo *forumRepositoryImpl) GetForum(ctx context.Context, slug string) (*core.Forum, error) {
 	forum := &core.Forum{}
 	err := repo.dbConn.QueryRow(ctx, `SELECT title, "user", slug, posts, threads FROM Forums WHERE slug = $1;`, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
 	return forum, err

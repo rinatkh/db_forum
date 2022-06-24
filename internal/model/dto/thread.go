@@ -2,7 +2,7 @@ package dto
 
 import "time"
 
-type CreateForumThreadRequest struct {
+type CreateThreadRequest struct {
 	Forum   string    `path:"slug"`
 	Title   string    `json:"title"`
 	Author  string    `json:"author"`
@@ -16,7 +16,7 @@ type UpdateVoteRequest struct {
 	Voice    int64  `json:"voice"`
 }
 
-type UpdateForumThreadRequest struct {
+type UpdateThreadRequest struct {
 	Title   string `json:"title"`
 	Message string `json:"message"`
 }

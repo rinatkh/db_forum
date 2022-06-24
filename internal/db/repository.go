@@ -5,8 +5,10 @@ import (
 )
 
 type Repository struct {
-	UserRepository  UserRepository
-	ForumRepository ForumRepository
+	UserRepository   UserRepository
+	ForumRepository  ForumRepository
+	ThreadRepository ThreadRepository
+	VotesRepository  VotesRepository
 }
 
 func NewRepository(dbConn *pgxpool.Pool) (*Repository, error) {
@@ -14,5 +16,7 @@ func NewRepository(dbConn *pgxpool.Pool) (*Repository, error) {
 
 	repository.UserRepository = NewUserRepository(dbConn)
 	repository.ForumRepository = NewForumRepository(dbConn)
+	repository.ThreadRepository = NewThreadRepository(dbConn)
+	repository.VotesRepository = NewVotesRepository(dbConn)
 	return repository, nil
 }
