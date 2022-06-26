@@ -15,11 +15,11 @@ func main() {
 	// -------------------- Set up viper -------------------- //
 	log := logrus.New()
 
-	formatter := logrus.JSONFormatter{
-		TimestampFormat: time.RFC3339,
-	}
+	//formatter := logrus.JSONFormatter{
+	//	TimestampFormat: time.RFC3339,
+	//}
 	log.SetLevel(logrus.InfoLevel)
-	log.SetFormatter(&formatter)
+	//log.SetFormatter(&formatter)
 
 	// -------------------- Set up database -------------------- //
 

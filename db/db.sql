@@ -48,11 +48,11 @@ CREATE UNLOGGED TABLE IF NOT EXISTS ForumUsers (
     about TEXT,
     email CITEXT NOT NULL,
     forum CITEXT NOT NULL REFERENCES Forums(slug),
-    PRIMARY KEY (nickname, forum)
+    PRIMARY KEY (forum, nickname)
 );
 
 CREATE UNLOGGED TABLE if not exists Votes (
-    nickname CITEXT COLLATE "C" NOT NULL REFERENCES Users (nickname),
+    nickname CITEXT COLLATE "C" NOT NULL REFERENCES Users(nickname),
     thread SERIAL NOT NULL REFERENCES Threads(id),
     voice INT NOT NULL,
     PRIMARY KEY (nickname, thread)
@@ -63,13 +63,11 @@ CREATE INDEX IF NOT EXISTS user_email ON Users USING hash(email);
 CREATE INDEX IF NOT EXISTS forum_slug ON Forums using hash(slug);
 CREATE INDEX IF NOT EXISTS thread_slug ON Threads USING hash(slug);
 CREATE INDEX IF NOT EXISTS thread_forum_slug ON Threads(forum);
-CREATE INDEX IF NOT EXISTS thread_forum_created_idx ON Threads(slug, created);
-CREATE INDEX IF NOT EXISTS post_thread ON Posts(thread);
+CREATE INDEX IF NOT EXISTS thread_forum_created ON Threads(forum, created);
 CREATE INDEX IF NOT EXISTS post_thread_created ON Posts(thread,created);
 CREATE INDEX IF NOT EXISTS post_path ON Posts((path[1]), path);
 CREATE INDEX IF NOT EXISTS post_thread_path ON Posts(thread, path);
-CREATE INDEX IF NOT EXISTS forum_users_forum_nickname ON ForumUsers (forum, nickname);
-CREATE INDEX IF NOT EXISTS votes_nickname_thread ON Votes (nickname, thread);
+CREATE INDEX IF NOT EXISTS votes_nickname_thread_voice ON Votes (nickname, thread, voice);
 
 CREATE OR REPLACE FUNCTION insert_vote() RETURNS TRIGGER AS $$
     BEGIN

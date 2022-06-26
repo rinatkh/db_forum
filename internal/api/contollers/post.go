@@ -92,7 +92,7 @@ func (c *PostController) UpdatePost(ctx echo.Context) error {
 	id, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	request.ID = id
 
-	response, err := c.registry.PostsService.UpdatePost(context.Background(), request)
+	response, err := c.registry.PostsService.EditPost(context.Background(), request)
 	if err != nil {
 		return err
 	}

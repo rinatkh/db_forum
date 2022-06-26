@@ -17,7 +17,7 @@ type PostsService interface {
 	CreatePosts(ctx context.Context, soi string, posts []*dto.Post) (*dto.Response, error)
 	GetPosts(ctx context.Context, soi string, sort string, since int64, desc bool, limit int64) (*dto.Response, error)
 	GetPostDetails(ctx context.Context, request *dto.GetPostDetailsRequest) (*dto.Response, error)
-	UpdatePost(ctx context.Context, request *dto.EditPostRequest) (*dto.Response, error)
+	EditPost(ctx context.Context, request *dto.EditPostRequest) (*dto.Response, error)
 }
 
 type postsServiceImpl struct {
@@ -25,7 +25,7 @@ type postsServiceImpl struct {
 	db  *db.Repository
 }
 
-func (svc *postsServiceImpl) UpdatePost(ctx context.Context, request *dto.EditPostRequest) (*dto.Response, error) {
+func (svc *postsServiceImpl) EditPost(ctx context.Context, request *dto.EditPostRequest) (*dto.Response, error) {
 	post, err := svc.db.PostsRepository.GetPostByID(ctx, request.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
