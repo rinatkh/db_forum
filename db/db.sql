@@ -62,7 +62,6 @@ CREATE INDEX IF NOT EXISTS user_nickname ON Users(nickname);
 CREATE INDEX IF NOT EXISTS user_email ON Users USING hash(email);
 CREATE INDEX IF NOT EXISTS forum_slug ON Forums using hash(slug);
 CREATE INDEX IF NOT EXISTS thread_slug ON Threads USING hash(slug);
-CREATE INDEX IF NOT EXISTS thread_forum_slug ON Threads(forum);
 CREATE INDEX IF NOT EXISTS thread_forum_created ON Threads(forum, created);
 CREATE INDEX IF NOT EXISTS post_thread_created ON Posts(thread,created);
 CREATE INDEX IF NOT EXISTS post_path ON Posts((path[1]), path);
@@ -128,4 +127,4 @@ CREATE TRIGGER update_post_path BEFORE INSERT ON Posts FOR EACH ROW EXECUTE PROC
 CREATE TRIGGER update_users_on_post AFTER INSERT ON Posts FOR EACH ROW EXECUTE PROCEDURE update_users_from_forum();
 CREATE TRIGGER update_users_on_thread AFTER INSERT ON Threads FOR EACH ROW EXECUTE PROCEDURE update_users_from_forum();
 
-VACUUM;
+VACUUM ANALYZE;
