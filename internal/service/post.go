@@ -55,7 +55,6 @@ func (svc *postsServiceImpl) CreatePosts(ctx context.Context, slugOrID string, p
 	if err != nil {
 		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				svc.log.Info("1")
 				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
 			}
 		} else {
@@ -64,14 +63,12 @@ func (svc *postsServiceImpl) CreatePosts(ctx context.Context, slugOrID string, p
 	} else {
 		if thread, err = svc.db.ThreadRepository.GetThreadByID(ctx, int64(id)); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				svc.log.Info("2")
 				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by id: %d", id)}, Code: http.StatusNotFound}, nil
 			}
 		}
 	}
 
 	if len(posts) == 0 {
-		svc.log.Info("3")
 		return &dto.Response{Data: []struct{}{}, Code: http.StatusCreated}, nil
 	}
 
@@ -79,27 +76,23 @@ func (svc *postsServiceImpl) CreatePosts(ctx context.Context, slugOrID string, p
 		parentThreadID, err := svc.db.PostsRepository.CheckParentPost(ctx, int(posts[0].Parent))
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				svc.log.Info("4")
 				return &dto.Response{Data: dto.ErrorResponse{Message: "Parent post was created in another thread"}, Code: http.StatusConflict}, nil
 			}
 		}
 
 		if parentThreadID != id {
-			svc.log.Info("5")
 			return &dto.Response{Data: dto.ErrorResponse{Message: "Parent post was created in another thread"}, Code: http.StatusConflict}, nil
 		}
 	}
 
 	if _, err := svc.db.UserRepository.GetUserByNickname(ctx, posts[0].Author); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			svc.log.Info("6")
 			return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find user by nickname: %s", posts[0].Author)}, Code: http.StatusNotFound}, nil
 		}
 	}
 
 	insertedPosts, err := svc.db.PostsRepository.CreatePosts(ctx, thread.Forum, int64(id), posts)
 	if err != nil {
-		svc.log.Info("7")
 		return nil, err
 	}
 

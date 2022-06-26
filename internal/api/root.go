@@ -16,7 +16,6 @@ type APIService struct {
 }
 
 func (svc *APIService) Serve() {
-	svc.log.Info("Starting HTTP server")
 	listenAddr := "0.0.0.0:5000"
 	svc.log.Fatal(svc.router.Start(listenAddr))
 }
@@ -41,7 +40,7 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool) (*APIService, error)
 
 	svc.router.Validator = NewValidator()
 	svc.router.Binder = NewBinder()
-	svc.router.Use(svc.LoggingMiddleware())
+	//svc.router.Use(svc.LoggingMiddleware())
 
 	registry := service.NewRegistry(log, repository)
 	userCtrl := controllers.NewUserController(log, registry)

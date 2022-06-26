@@ -21,13 +21,16 @@ type forumRepositoryImpl struct {
 }
 
 func (repo *forumRepositoryImpl) CreateForum(ctx context.Context, forum *core.Forum) error {
-	_, err := repo.dbConn.Exec(ctx, `INSERT INTO Forums (title, "user", slug) VALUES ($1, $2, $3);`, &forum.Title, &forum.User, &forum.Slug)
+	_, err := repo.dbConn.Exec(ctx,
+		`INSERT INTO Forums (title, "user", slug) VALUES ($1, $2, $3);`,
+		&forum.Title, &forum.User, &forum.Slug)
 	return err
 }
 
 func (repo *forumRepositoryImpl) GetForum(ctx context.Context, slug string) (*core.Forum, error) {
 	forum := &core.Forum{}
-	err := repo.dbConn.QueryRow(ctx, `SELECT title, "user", slug, posts, threads FROM Forums WHERE slug = $1;`, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
+	err := repo.dbConn.QueryRow(ctx,
+		`SELECT title, "user", slug, posts, threads FROM Forums WHERE slug = $1;`, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
 	return forum, err
 }
 

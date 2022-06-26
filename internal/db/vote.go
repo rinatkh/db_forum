@@ -20,13 +20,17 @@ type votesRepositoryImpl struct {
 }
 
 func (repo *votesRepositoryImpl) CreateVote(ctx context.Context, vote *core.Vote) error {
-	_, err := repo.dbConn.Exec(ctx, "INSERT INTO Votes (nickname, thread, voice) VALUES ($1, $2, $3);", vote.Nickname, vote.ThreadID, vote.Voice)
+	_, err := repo.dbConn.Exec(ctx,
+		"INSERT INTO Votes (nickname, thread, voice) VALUES ($1, $2, $3);",
+		vote.Nickname, vote.ThreadID, vote.Voice)
 	return err
 }
 
 func (repo *votesRepositoryImpl) VoteExists(ctx context.Context, nickname string, threadID int64) (bool, error) {
 	voice := 0
-	err := repo.dbConn.QueryRow(ctx, "SELECT voice from Votes where nickname = $1 and thread = $2;", nickname, threadID).Scan(&voice)
+	err := repo.dbConn.QueryRow(ctx,
+		"SELECT voice from Votes where nickname = $1 and thread = $2;",
+		nickname, threadID).Scan(&voice)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -37,7 +41,9 @@ func (repo *votesRepositoryImpl) VoteExists(ctx context.Context, nickname string
 }
 
 func (repo *votesRepositoryImpl) UpdateVote(ctx context.Context, threadID int64, nickname string, voice int64) (bool, error) {
-	res, err := repo.dbConn.Exec(ctx, "UPDATE Votes SET voice = $3 WHERE thread = $1 and nickname = $2 and voice != $3;", threadID, nickname, voice)
+	res, err := repo.dbConn.Exec(ctx,
+		"UPDATE Votes SET voice = $3 WHERE thread = $1 and nickname = $2 and voice != $3;",
+		threadID, nickname, voice)
 	if err != nil {
 		return false, err
 	}

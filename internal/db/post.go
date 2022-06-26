@@ -16,13 +16,11 @@ import (
 type PostsRepository interface {
 	CreatePosts(ctx context.Context, forum string, thread int64, posts []*dto.Post) ([]*core.Post, error)
 	CheckParentPost(ctx context.Context, parent int) (int, error)
-
 	GetPostsFlat(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error)
 	GetPostsTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error)
 	GetPostsParentTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error)
 	GetPostDetails(ctx context.Context, id int64, related string) (dto.PostDetails, error)
 	GetPostByID(ctx context.Context, id int64) (*core.Post, error)
-
 	UpdatePost(ctx context.Context, id int64, message string) (*core.Post, error)
 }
 
@@ -40,7 +38,10 @@ func (repo *postsRepositoryImpl) CreatePosts(ctx context.Context, forum string, 
 	for i, post := range posts {
 		p := &core.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, Forum: forum, Thread: thread, Created: insertTime}
 		newPosts = append(newPosts, p)
-		fmt.Fprintf(&query, "($%d, $%d, $%d, $%d, $%d, $%d),", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6)
+		_, err := fmt.Fprintf(&query, "($%d, $%d, $%d, $%d, $%d, $%d),", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6)
+		if err != nil {
+			return nil, err
+		}
 		queryArgs = append(queryArgs, post.Parent, post.Author, post.Message, forum, thread, insertTime)
 	}
 
@@ -65,7 +66,8 @@ func (repo *postsRepositoryImpl) CreatePosts(ctx context.Context, forum string, 
 
 func (repo *postsRepositoryImpl) CheckParentPost(ctx context.Context, parent int) (int, error) {
 	var threadID int
-	err := repo.dbConn.QueryRow(ctx, "SELECT thread FROM Posts WHERE id = $1;", parent).Scan(&threadID)
+	err := repo.dbConn.QueryRow(ctx,
+		"SELECT thread FROM Posts WHERE id = $1;", parent).Scan(&threadID)
 	return threadID, err
 }
 
@@ -156,13 +158,13 @@ func (repo *postsRepositoryImpl) GetPostsParentTree(ctx context.Context, id int,
 	if since == -1 {
 		if desc {
 			rows, err = repo.dbConn.Query(ctx,
-				` SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
+				`SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
 					WHERE path[1] IN (SELECT id FROM Posts WHERE thread = $1 AND parent = 0 ORDER BY id DESC LIMIT $2)
 					ORDER BY path[1] DESC, path ASC, id ASC;`,
 				id, limit)
 		} else {
 			rows, err = repo.dbConn.Query(ctx,
-				`	SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
+				`SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
 					WHERE path[1] IN (SELECT id FROM Posts WHERE thread = $1 AND parent = 0 ORDER BY id ASC LIMIT $2)
 					ORDER BY path ASC, id ASC;`,
 				id, limit)
@@ -170,13 +172,13 @@ func (repo *postsRepositoryImpl) GetPostsParentTree(ctx context.Context, id int,
 	} else {
 		if desc {
 			rows, err = repo.dbConn.Query(ctx,
-				` SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
+				`SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts
 					WHERE path[1] IN (SELECT id FROM Posts WHERE thread = $1 AND parent = 0 AND path[1] < (SELECT path[1] FROM posts WHERE id = $2)
 					ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path ASC, id ASC;`,
 				id, since, limit)
 		} else {
 			rows, err = repo.dbConn.Query(ctx,
-				` SELECT id, parent, author, message, isEdited, forum, thread, created FROM posts
+				`SELECT id, parent, author, message, isEdited, forum, thread, created FROM posts
 					WHERE path[1] IN (SELECT id FROM Posts WHERE thread = $1 AND parent = 0 AND path[1] >
 					(SELECT path[1] FROM Posts WHERE id = $2) ORDER BY id ASC LIMIT $3) 
 					ORDER BY path ASC, id ASC;`,
@@ -206,7 +208,8 @@ func (repo *postsRepositoryImpl) GetPostDetails(ctx context.Context, id int64, r
 		switch arg {
 		case "user":
 			author := &core.User{}
-			err := repo.dbConn.QueryRow(ctx, "SELECT a.nickname, a.fullname, a.about, a.email FROM Posts JOIN Users a ON a.nickname = Posts.author WHERE posts.id = $1;", id).Scan(&author.Nickname, &author.Fullname, &author.About, &author.Email)
+			err := repo.dbConn.QueryRow(ctx,
+				"SELECT a.nickname, a.fullname, a.about, a.email FROM Posts JOIN Users a ON a.nickname = Posts.author WHERE posts.id = $1;", id).Scan(&author.Nickname, &author.Fullname, &author.About, &author.Email)
 			if err != nil {
 				return dto.PostDetails{}, err
 			}
@@ -214,7 +217,9 @@ func (repo *postsRepositoryImpl) GetPostDetails(ctx context.Context, id int64, r
 
 		case "thread":
 			thread := &core.Thread{}
-			err := repo.dbConn.QueryRow(ctx, "SELECT th.id, th.title, th.author, th.forum, th.message, th.votes, th.slug, th.created FROM Posts JOIN Threads th ON th.id = Posts.thread WHERE posts.id = $1;", id).
+			err := repo.dbConn.QueryRow(ctx,
+				"SELECT th.id, th.title, th.author, th.forum, th.message, th.votes, th.slug, th.created FROM Posts JOIN Threads th ON th.id = Posts.thread WHERE posts.id = $1;",
+				id).
 				Scan(&thread.ID, &thread.Title, &thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 			if err != nil {
@@ -224,7 +229,8 @@ func (repo *postsRepositoryImpl) GetPostDetails(ctx context.Context, id int64, r
 
 		case "forum":
 			forum := &core.Forum{}
-			err := repo.dbConn.QueryRow(ctx, "SELECT f.title, f.user, f.slug, f.posts, f.threads FROM Posts JOIN Forums f ON f.slug = Posts.forum WHERE Posts.id = $1;", id).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
+			err := repo.dbConn.QueryRow(ctx,
+				"SELECT f.title, f.user, f.slug, f.posts, f.threads FROM Posts JOIN Forums f ON f.slug = Posts.forum WHERE Posts.id = $1;", id).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
 			if err != nil {
 				return dto.PostDetails{}, err
 			}
@@ -237,14 +243,18 @@ func (repo *postsRepositoryImpl) GetPostDetails(ctx context.Context, id int64, r
 
 func (repo *postsRepositoryImpl) GetPostByID(ctx context.Context, id int64) (*core.Post, error) {
 	post := &core.Post{}
-	err := repo.dbConn.QueryRow(ctx, "SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts WHERE id = $1;", id).
+	err := repo.dbConn.QueryRow(ctx,
+		"SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts WHERE id = $1;",
+		id).
 		Scan(&post.ID, &post.Parent, &post.Author, &post.Message, &post.IsEdited, &post.Forum, &post.Thread, &post.Created)
 	return post, err
 }
 
 func (repo *postsRepositoryImpl) UpdatePost(ctx context.Context, id int64, message string) (*core.Post, error) {
 	post := &core.Post{}
-	err := repo.dbConn.QueryRow(ctx, "UPDATE Posts SET message = $2, isEdited = true WHERE id = $1 RETURNING id, parent, author, message, isEdited, forum, thread, created;", id, message).
+	err := repo.dbConn.QueryRow(ctx,
+		"UPDATE Posts SET message = $2, isEdited = true WHERE id = $1 RETURNING id, parent, author, message, isEdited, forum, thread, created;",
+		id, message).
 		Scan(&post.ID, &post.Parent, &post.Author, &post.Message,
 			&post.IsEdited, &post.Forum, &post.Thread, &post.Created)
 	if err != nil {

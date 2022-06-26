@@ -21,8 +21,6 @@ func main() {
 	log.SetLevel(logrus.InfoLevel)
 	log.SetFormatter(&formatter)
 
-	log.Infof("log level: %s", log.Level.String())
-
 	// -------------------- Set up database -------------------- //
 
 	dbPool, err := pgxpool.Connect(context.Background(), "postgres://root:password@localhost:5432/docker")
