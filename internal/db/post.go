@@ -21,7 +21,7 @@ type PostsRepository interface {
 	GetPostsParentTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error)
 	GetPostDetails(ctx context.Context, id int64, related string) (dto.PostDetails, error)
 	GetPostByID(ctx context.Context, id int64) (*core.Post, error)
-	UpdatePost(ctx context.Context, id int64, message string) (*core.Post, error)
+	EditPost(ctx context.Context, id int64, message string) (*core.Post, error)
 }
 
 type postsRepositoryImpl struct {
@@ -114,44 +114,6 @@ func (repo *postsRepositoryImpl) GetPostsFlat(ctx context.Context, id int, since
 	return posts, err
 }
 
-func (repo *postsRepositoryImpl) GetPostsTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error) {
-	query := "SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts WHERE thread = $1 "
-
-	if since != -1 {
-		if desc {
-			query += "and path < "
-		} else {
-			query += "and path > "
-		}
-		query += fmt.Sprintf("(SELECT path FROM posts WHERE id = %d) ", since)
-	}
-
-	if desc {
-		query += "ORDER BY path desc "
-	} else {
-		query += "ORDER BY path asc, id "
-	}
-
-	query += fmt.Sprintf("LIMIT NULLIF(%d, 0) ", limit)
-
-	rows, err := repo.dbConn.Query(ctx, query, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	posts := make([]*core.Post, 0, rows.CommandTag().RowsAffected())
-	for rows.Next() {
-		post := &core.Post{}
-		if err := rows.Scan(&post.ID, &post.Parent, &post.Author, &post.Message, &post.IsEdited, &post.Forum, &post.Thread, &post.Created); err != nil {
-			return nil, err
-		}
-		posts = append(posts, post)
-	}
-
-	return posts, nil
-}
-
 func (repo *postsRepositoryImpl) GetPostsParentTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error) {
 	var rows pgx.Rows
 	var err error
@@ -241,6 +203,44 @@ func (repo *postsRepositoryImpl) GetPostDetails(ctx context.Context, id int64, r
 	return postDetails, nil
 }
 
+func (repo *postsRepositoryImpl) GetPostsTree(ctx context.Context, id int, since int64, desc bool, limit int64) ([]*core.Post, error) {
+	query := "SELECT id, parent, author, message, isEdited, forum, thread, created FROM Posts WHERE thread = $1 "
+
+	if since != -1 {
+		if desc {
+			query += "and path < "
+		} else {
+			query += "and path > "
+		}
+		query += fmt.Sprintf("(SELECT path FROM posts WHERE id = %d) ", since)
+	}
+
+	if desc {
+		query += "ORDER BY path desc "
+	} else {
+		query += "ORDER BY path asc, id "
+	}
+
+	query += fmt.Sprintf("LIMIT NULLIF(%d, 0) ", limit)
+
+	rows, err := repo.dbConn.Query(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	posts := make([]*core.Post, 0, rows.CommandTag().RowsAffected())
+	for rows.Next() {
+		post := &core.Post{}
+		if err := rows.Scan(&post.ID, &post.Parent, &post.Author, &post.Message, &post.IsEdited, &post.Forum, &post.Thread, &post.Created); err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
+
 func (repo *postsRepositoryImpl) GetPostByID(ctx context.Context, id int64) (*core.Post, error) {
 	post := &core.Post{}
 	err := repo.dbConn.QueryRow(ctx,
@@ -250,7 +250,7 @@ func (repo *postsRepositoryImpl) GetPostByID(ctx context.Context, id int64) (*co
 	return post, err
 }
 
-func (repo *postsRepositoryImpl) UpdatePost(ctx context.Context, id int64, message string) (*core.Post, error) {
+func (repo *postsRepositoryImpl) EditPost(ctx context.Context, id int64, message string) (*core.Post, error) {
 	post := &core.Post{}
 	err := repo.dbConn.QueryRow(ctx,
 		"UPDATE Posts SET message = $2, isEdited = true WHERE id = $1 RETURNING id, parent, author, message, isEdited, forum, thread, created;",

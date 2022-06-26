@@ -14,8 +14,8 @@ import (
 )
 
 type PostsService interface {
-	CreatePosts(ctx context.Context, slugOrID string, posts []*dto.Post) (*dto.Response, error)
-	GetPosts(ctx context.Context, slugOrID string, sort string, since int64, desc bool, limit int64) (*dto.Response, error)
+	CreatePosts(ctx context.Context, soi string, posts []*dto.Post) (*dto.Response, error)
+	GetPosts(ctx context.Context, soi string, sort string, since int64, desc bool, limit int64) (*dto.Response, error)
 	GetPostDetails(ctx context.Context, request *dto.GetPostDetailsRequest) (*dto.Response, error)
 	UpdatePost(ctx context.Context, request *dto.EditPostRequest) (*dto.Response, error)
 }
@@ -38,7 +38,7 @@ func (svc *postsServiceImpl) UpdatePost(ctx context.Context, request *dto.EditPo
 		return &dto.Response{Data: post, Code: http.StatusOK}, nil
 	}
 
-	updatedPost, err := svc.db.PostsRepository.UpdatePost(ctx, request.ID, request.Message)
+	updatedPost, err := svc.db.PostsRepository.EditPost(ctx, request.ID, request.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -46,16 +46,16 @@ func (svc *postsServiceImpl) UpdatePost(ctx context.Context, request *dto.EditPo
 	return &dto.Response{Data: updatedPost, Code: http.StatusOK}, nil
 }
 
-func (svc *postsServiceImpl) CreatePosts(ctx context.Context, slugOrID string, posts []*dto.Post) (*dto.Response, error) {
+func (svc *postsServiceImpl) CreatePosts(ctx context.Context, soi string, posts []*dto.Post) (*dto.Response, error) {
 	var id int
 	var err error
-	id, err = strconv.Atoi(slugOrID)
+	id, err = strconv.Atoi(soi)
 
 	var thread *core.Thread
 	if err != nil {
-		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
+		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, soi); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
+				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", soi)}, Code: http.StatusNotFound}, nil
 			}
 		} else {
 			id = int(thread.ID)
@@ -99,12 +99,12 @@ func (svc *postsServiceImpl) CreatePosts(ctx context.Context, slugOrID string, p
 	return &dto.Response{Data: insertedPosts, Code: http.StatusCreated}, nil
 }
 
-func (svc *postsServiceImpl) GetPosts(ctx context.Context, slugOrID string, sort string, since int64, desc bool, limit int64) (*dto.Response, error) {
-	id, err := strconv.Atoi(slugOrID)
+func (svc *postsServiceImpl) GetPosts(ctx context.Context, soi string, sort string, since int64, desc bool, limit int64) (*dto.Response, error) {
+	id, err := strconv.Atoi(soi)
 	if err != nil {
-		if thread, err := svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
+		if thread, err := svc.db.ThreadRepository.GetThreadBySlug(ctx, soi); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
+				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", soi)}, Code: http.StatusNotFound}, nil
 			}
 		} else {
 			id = int(thread.ID)

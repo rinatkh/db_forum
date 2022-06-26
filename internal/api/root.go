@@ -38,8 +38,8 @@ func NewAPIService(log *logrus.Entry, dbConn *pgxpool.Pool) (*APIService, error)
 		log.Fatal(err)
 	}
 
-	svc.router.Validator = NewValidator()
-	svc.router.Binder = NewBinder()
+	//svc.router.Validator = NewValidator()
+	//svc.router.Binder = NewBinder()
 	//svc.router.Use(svc.LoggingMiddleware())
 
 	registry := service.NewRegistry(log, repository)

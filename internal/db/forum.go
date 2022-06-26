@@ -20,13 +20,6 @@ type forumRepositoryImpl struct {
 	dbConn *pgxpool.Pool
 }
 
-func (repo *forumRepositoryImpl) CreateForum(ctx context.Context, forum *core.Forum) error {
-	_, err := repo.dbConn.Exec(ctx,
-		`INSERT INTO Forums (title, "user", slug) VALUES ($1, $2, $3);`,
-		&forum.Title, &forum.User, &forum.Slug)
-	return err
-}
-
 func (repo *forumRepositoryImpl) GetForum(ctx context.Context, slug string) (*core.Forum, error) {
 	forum := &core.Forum{}
 	err := repo.dbConn.QueryRow(ctx,
@@ -52,6 +45,37 @@ func (repo *forumRepositoryImpl) GetForumUsers(ctx context.Context, slug string,
 	}
 
 	return users, nil
+}
+
+func (repo *forumRepositoryImpl) CreateForum(ctx context.Context, forum *core.Forum) error {
+	_, err := repo.dbConn.Exec(ctx,
+		`INSERT INTO Forums (title, "user", slug) VALUES ($1, $2, $3);`,
+		&forum.Title, &forum.User, &forum.Slug)
+	return err
+}
+
+func NewForumRepository(dbConn *pgxpool.Pool) *forumRepositoryImpl {
+	return &forumRepositoryImpl{dbConn: dbConn}
+}
+
+func constructGetForumUsersQuery(limit int64, since string, desc bool) string {
+	query := "SELECT u.nickname, u.fullname, u.about, u.email from ForumUsers u where u.forum = $1 "
+
+	if len(since) > 0 {
+		if desc {
+			query += fmt.Sprintf("and u.nickname < '%s' ", since)
+		} else {
+			query += fmt.Sprintf("and u.nickname > '%s' ", since)
+		}
+	}
+
+	query += "ORDER BY u.nickname "
+	if desc {
+		query += "DESC "
+	}
+	query += fmt.Sprintf("LIMIT %d ", limit)
+
+	return query
 }
 
 func (repo *forumRepositoryImpl) GetForumThreads(ctx context.Context, slug string, limit int64, since string, desc bool) ([]*core.Thread, error) {
@@ -97,28 +121,4 @@ func (repo *forumRepositoryImpl) GetForumThreads(ctx context.Context, slug strin
 	}
 
 	return threads, nil
-}
-
-func NewForumRepository(dbConn *pgxpool.Pool) *forumRepositoryImpl {
-	return &forumRepositoryImpl{dbConn: dbConn}
-}
-
-func constructGetForumUsersQuery(limit int64, since string, desc bool) string {
-	query := "SELECT u.nickname, u.fullname, u.about, u.email from ForumUsers u where u.forum = $1 "
-
-	if len(since) > 0 {
-		if desc {
-			query += fmt.Sprintf("and u.nickname < '%s' ", since)
-		} else {
-			query += fmt.Sprintf("and u.nickname > '%s' ", since)
-		}
-	}
-
-	query += "ORDER BY u.nickname "
-	if desc {
-		query += "DESC "
-	}
-	query += fmt.Sprintf("LIMIT %d ", limit)
-
-	return query
 }

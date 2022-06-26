@@ -27,8 +27,8 @@ func (c *PostController) CreatePosts(ctx echo.Context) error {
 	}
 	err = json.Unmarshal(buf.Bytes(), &request)
 
-	slugOrID := ctx.Param("slug_or_id")
-	response, err := c.registry.PostsService.CreatePosts(context.Background(), slugOrID, request)
+	soi := ctx.Param("slug_or_id")
+	response, err := c.registry.PostsService.CreatePosts(context.Background(), soi, request)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (c *PostController) CreatePosts(ctx echo.Context) error {
 }
 
 func (c *PostController) GetPosts(ctx echo.Context) error {
-	slugOrID := ctx.Param("slug_or_id")
+	soi := ctx.Param("slug_or_id")
 	sort := ctx.QueryParam("sort")
 	if sort == "" {
 		sort = "flat"
@@ -57,7 +57,7 @@ func (c *PostController) GetPosts(ctx echo.Context) error {
 	desc, _ := strconv.ParseBool(ctx.QueryParam("desc"))
 	limit, _ := strconv.ParseInt(limitParam, 10, 64)
 
-	response, err := c.registry.PostsService.GetPosts(context.Background(), slugOrID, sort, since, desc, limit)
+	response, err := c.registry.PostsService.GetPosts(context.Background(), soi, sort, since, desc, limit)
 	if err != nil {
 		return err
 	}

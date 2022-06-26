@@ -15,9 +15,9 @@ import (
 
 type ThreadService interface {
 	CreateThread(ctx context.Context, request *dto.CreateThreadRequest) (*dto.Response, error)
-	CountVote(ctx context.Context, slugOrID string, request *dto.EditVoteRequest) (*dto.Response, error)
-	GetThread(ctx context.Context, slugOrID string) (*dto.Response, error)
-	EditThread(ctx context.Context, slugOrID string, request *dto.EditThreadRequest) (*dto.Response, error)
+	CountVote(ctx context.Context, soi string, request *dto.EditVoteRequest) (*dto.Response, error)
+	GetThread(ctx context.Context, soi string) (*dto.Response, error)
+	EditThread(ctx context.Context, soi string, request *dto.EditThreadRequest) (*dto.Response, error)
 }
 
 type threadServiceImpl struct {
@@ -25,12 +25,12 @@ type threadServiceImpl struct {
 	db  *db.Repository
 }
 
-func (svc *threadServiceImpl) GetThread(ctx context.Context, slugOrID string) (*dto.Response, error) {
-	id, err := strconv.Atoi(slugOrID)
+func (svc *threadServiceImpl) GetThread(ctx context.Context, soi string) (*dto.Response, error) {
+	id, err := strconv.Atoi(soi)
 	if err != nil {
-		if thread, err := svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
+		if thread, err := svc.db.ThreadRepository.GetThreadBySlug(ctx, soi); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
+				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", soi)}, Code: http.StatusNotFound}, nil
 			}
 			return nil, err
 		} else {
@@ -84,16 +84,16 @@ func (svc *threadServiceImpl) CreateThread(ctx context.Context, request *dto.Cre
 	return &dto.Response{Data: thread, Code: http.StatusCreated}, nil
 }
 
-func (svc *threadServiceImpl) CountVote(ctx context.Context, slugOrID string, request *dto.EditVoteRequest) (*dto.Response, error) {
+func (svc *threadServiceImpl) CountVote(ctx context.Context, soi string, request *dto.EditVoteRequest) (*dto.Response, error) {
 	var id int
 	var err error
-	id, err = strconv.Atoi(slugOrID)
+	id, err = strconv.Atoi(soi)
 
 	var thread *core.Thread
 	if err != nil {
-		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
+		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, soi); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
+				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", soi)}, Code: http.StatusNotFound}, nil
 			}
 		} else {
 			id = int(thread.ID)
@@ -120,7 +120,7 @@ func (svc *threadServiceImpl) CountVote(ctx context.Context, slugOrID string, re
 	}
 
 	if exists {
-		if ok, err := svc.db.VotesRepository.UpdateVote(ctx, thread.ID, request.Nickname, request.Voice); err != nil {
+		if ok, err := svc.db.VotesRepository.EditVote(ctx, thread.ID, request.Nickname, request.Voice); err != nil {
 			return nil, err
 		} else if ok {
 			thread.Votes += request.Voice * 2
@@ -142,15 +142,15 @@ func (svc *threadServiceImpl) CountVote(ctx context.Context, slugOrID string, re
 	return &dto.Response{Data: thread, Code: http.StatusOK}, nil
 }
 
-func (svc *threadServiceImpl) EditThread(ctx context.Context, slugOrID string, request *dto.EditThreadRequest) (*dto.Response, error) {
+func (svc *threadServiceImpl) EditThread(ctx context.Context, soi string, request *dto.EditThreadRequest) (*dto.Response, error) {
 	var thread *core.Thread
 	var err error
 
-	id, err := strconv.Atoi(slugOrID)
+	id, err := strconv.Atoi(soi)
 	if err != nil {
-		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, slugOrID); err != nil {
+		if thread, err = svc.db.ThreadRepository.GetThreadBySlug(ctx, soi); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", slugOrID)}, Code: http.StatusNotFound}, nil
+				return &dto.Response{Data: dto.ErrorResponse{Message: fmt.Sprintf("Can't find thread forum by slug: %s", soi)}, Code: http.StatusNotFound}, nil
 			}
 			return nil, err
 		} else {

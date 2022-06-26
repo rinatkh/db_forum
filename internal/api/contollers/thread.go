@@ -36,8 +36,8 @@ func (c *ThreadController) CountVote(ctx echo.Context) error {
 		c.log.Errorf("Bind error: %s", err)
 		return err
 	}
-	slugOrID := ctx.Param("slug_or_id")
-	response, err := c.registry.ThreadService.CountVote(context.Background(), slugOrID, request)
+	soi := ctx.Param("slug_or_id")
+	response, err := c.registry.ThreadService.CountVote(context.Background(), soi, request)
 	if err != nil {
 		return err
 	}
@@ -46,9 +46,9 @@ func (c *ThreadController) CountVote(ctx echo.Context) error {
 }
 
 func (c *ThreadController) GetThread(ctx echo.Context) error {
-	slugOrID := ctx.Param("slug_or_id")
+	soi := ctx.Param("slug_or_id")
 
-	response, err := c.registry.ThreadService.GetThread(context.Background(), slugOrID)
+	response, err := c.registry.ThreadService.GetThread(context.Background(), soi)
 	if err != nil {
 		return err
 	}
@@ -62,9 +62,9 @@ func (c *ThreadController) EditThread(ctx echo.Context) error {
 		c.log.Errorf("Bind error: %s", err)
 		return err
 	}
-	slugOrID := ctx.Param("slug_or_id")
+	soi := ctx.Param("slug_or_id")
 
-	response, err := c.registry.ThreadService.EditThread(context.Background(), slugOrID, request)
+	response, err := c.registry.ThreadService.EditThread(context.Background(), soi, request)
 	if err != nil {
 		return err
 	}

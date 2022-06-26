@@ -39,6 +39,20 @@ func (repo *userRepositoryImpl) GetUserByNickname(ctx context.Context, nickname 
 	return user, err
 }
 
+func (repo *userRepositoryImpl) EditUser(ctx context.Context, user *core.User) (*core.User, error) {
+	updatedUser := &core.User{Nickname: user.Nickname}
+	if err := repo.dbConn.QueryRow(ctx,
+		"UPDATE Users SET fullname = COALESCE(NULLIF(TRIM($1), ''), fullname), about = COALESCE(NULLIF(TRIM($2), ''), about), email = COALESCE(NULLIF(TRIM($3), ''), email) WHERE nickname = $4 RETURNING fullname, about, email;",
+		user.Fullname, user.About, user.Email, user.Nickname).Scan(&updatedUser.Fullname, &updatedUser.About, &updatedUser.Email); err != nil {
+		return nil, err
+	}
+	return updatedUser, nil
+}
+
+func NewUserRepository(dbConn *pgxpool.Pool) *userRepositoryImpl {
+	return &userRepositoryImpl{dbConn: dbConn}
+}
+
 func (repo *userRepositoryImpl) GetUsersByEmailOrNickname(ctx context.Context, email, nickname string) ([]*core.User, error) {
 	rows, err := repo.dbConn.Query(ctx,
 		"SELECT nickname, fullname, about, email FROM Users WHERE email = $1 OR nickname = $2;",
@@ -58,18 +72,4 @@ func (repo *userRepositoryImpl) GetUsersByEmailOrNickname(ctx context.Context, e
 	}
 
 	return users, nil
-}
-
-func (repo *userRepositoryImpl) EditUser(ctx context.Context, user *core.User) (*core.User, error) {
-	updatedUser := &core.User{Nickname: user.Nickname}
-	if err := repo.dbConn.QueryRow(ctx,
-		"UPDATE Users SET fullname = COALESCE(NULLIF(TRIM($1), ''), fullname), about = COALESCE(NULLIF(TRIM($2), ''), about), email = COALESCE(NULLIF(TRIM($3), ''), email) WHERE nickname = $4 RETURNING fullname, about, email;",
-		user.Fullname, user.About, user.Email, user.Nickname).Scan(&updatedUser.Fullname, &updatedUser.About, &updatedUser.Email); err != nil {
-		return nil, err
-	}
-	return updatedUser, nil
-}
-
-func NewUserRepository(dbConn *pgxpool.Pool) *userRepositoryImpl {
-	return &userRepositoryImpl{dbConn: dbConn}
 }
